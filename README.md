@@ -13,6 +13,7 @@ Inspired by [Altair's  ESP-TMEP](https://github.com/ridercz/ESP-TMEP), but there
   * Use file secrets.h for secret default values (configuration of InfluxDB connection parameters)
   * Use built-in LED for blinking every measure and for other statuses such as configuration fail
   * Use DTH sensor (DHT11 sensor for temperature and humidity measurement)
+  * Use "configuration" button for start AP mode and configuration portal
 
 ## Limitations
 
@@ -20,6 +21,17 @@ Inspired by [Altair's  ESP-TMEP](https://github.com/ridercz/ESP-TMEP), but there
 * Skip server certificate validation (may be in the future)
 * No internal web server (and not planned)
 * Not optimized for power consume (deep sleep and etc, but may be in the future)
+
+## Schematic diagram
+
+![Schematic diagram](doc/circuit.svg)
+
+Full schematic with all features connected to Wemos D1 Mini.
+
+__Features:__
+  
+* DHT11 sensor
+* Configuration button
 
 ## Libraries
 
