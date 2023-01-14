@@ -88,6 +88,7 @@ DHT dht(DHT_PIN, DHT_TYPE);                 // Initialize DHT sensor.
 
 #ifdef DEBUG
 #define WIFIMANAGER_DEBUG true              // Show WiFiManager debug messages
+//#define DHT_DEBUG                           // Uncomment to enable printing out DHT debug messages.
 #else
 #define WIFIMANAGER_DEBUG false             // Supress WiFiManager debug messages
 #endif
