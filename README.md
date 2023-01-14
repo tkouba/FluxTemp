@@ -24,7 +24,7 @@ Inspired by [Altair's  ESP-TMEP](https://github.com/ridercz/ESP-TMEP), but there
 
 ## Schematic diagram
 
-![Schematic diagram](doc/circuit.svg)
+![Schematic diagram](doc/circuit.svg) or browsable version [on Circuit Diagram](https://crcit.net/c/c36b5ea58b0f4e10a57509fa69e98ac0)
 
 Full schematic with all features connected to Wemos D1 Mini.
 
