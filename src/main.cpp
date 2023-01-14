@@ -142,6 +142,8 @@ void setup() {
 void loop() {
   BLINK(1); // Blink at every measure
 
+  bool saveToInflux = false; // Are there any data to save?
+
   // Define data point with measurement name
   Point pointDevice(measurementName);
   // Set tags
@@ -175,6 +177,7 @@ void loop() {
   }
   else {
     DPRINTLN_F("OK");
+    saveToInflux = true; // There are some data to write to
     // Compute heat index in Celsius (isFahreheit = false)
     float hic = dht.computeHeatIndex(t, h, false);
     pointDevice.addField("heatIndex", hic);
@@ -185,13 +188,18 @@ void loop() {
   #endif
 
   // Write data
-  DPRINT_F("InfluxDB writing: ");
-  DPRINTLN(pointDevice.toLineProtocol()); 
-  if (!client.writePoint(pointDevice)) {
-    // Cannot write data
-    DPRINT_F("InfluxDB write failed: ");
-    DPRINTLN(client.getLastErrorMessage());
-    BLINK(ERROR_WRITE);
+  if (saveToInflux) {
+    DPRINT_F("InfluxDB writing: ");
+    DPRINTLN(pointDevice.toLineProtocol()); 
+    if (!client.writePoint(pointDevice)) {
+      // Cannot write data
+      DPRINT_F("InfluxDB write failed: ");
+      DPRINTLN(client.getLastErrorMessage());
+      BLINK(ERROR_WRITE);
+    }
+  }
+  else {
+    DPRINTLN_F("No data to write to InfluxDB.");
   }
 
   delay(LOOP_INTERVAL);
