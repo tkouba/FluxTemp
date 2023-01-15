@@ -8,30 +8,29 @@ Inspired by [Altair's  ESP-TMEP](https://github.com/ridercz/ESP-TMEP), but there
 ## Features
 
 * ESP8266 platform (Wemos D1 Lite)
-* Runtime configuration via web browser, using WiFi Manager
+* Runtime configuration via web browser, using WiFi Manager. Configuration captive portal is started automatically when configured WiFi is not available.
 * Compile time features selection (see main.h)
-  * Use file secrets.h for secret default values (configuration of InfluxDB connection parameters)
-  * Use built-in LED for blinking every measure and for other statuses such as configuration fail
-  * Use DTH sensor (DHT11 sensor for temperature and humidity measurement)
-  * Use "configuration" button for start AP mode and configuration portal
+  * [x] Use file secrets.h for secret default values (configuration of InfluxDB connection parameters)
+  * [x] Use built-in LED for blinking every measure and for other statuses such as configuration fail
+  * [x] Use DHT sensor. Currently [DHT11 sensor](https://www.laskakit.cz/arduino-senzor-teploty-a-vlhkosti-vzduchu-dht11--modul/) for temperature and humidity measurement.
+  * [x] Use "configuration" button for start AP mode and configuration portal. Useful for "testing" solution.
+  * [ ] Planned DS18B20 sensor.
+  * [ ] Planned [BME280 sensor](https://www.laskakit.cz/arduino-senzor-tlaku--teploty-a-vlhkosti-bme280/).
 
 ## Limitations
 
 * Only InfluxDB version 2.x is supported
-* Skip server certificate validation (may be in the future)
+* Skip server certificate validation (currently not planned, but may be in the future)
 * No internal web server (and not planned)
 * Not optimized for power consume (deep sleep and etc, but may be in the future)
 
 ## Schematic diagram
 
-![Schematic diagram](doc/circuit.svg) or browsable version [on Circuit Diagram](https://crcit.net/c/c36b5ea58b0f4e10a57509fa69e98ac0)
+![Schematic diagram](doc/circuit.svg)
 
-Full schematic with all features connected to Wemos D1 Mini.
+or browsable version [on Circuit Diagram](https://crcit.net/c/c36b5ea58b0f4e10a57509fa69e98ac0)
 
-__Features:__
-  
-* DHT11 sensor
-* Configuration button
+Full schematic with all features connected to Wemos D1 Mini. Choose compile time feature and required hardware.
 
 ## Libraries
 
@@ -44,7 +43,7 @@ The following external libraries are required:
 
 ## Other resources
 
-* [Time zones](https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv) for server certificate validation
+* [Time zones](https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv) for server certificate validation. Remember it for far future.
 
 ## Used links
 
