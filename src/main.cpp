@@ -63,6 +63,17 @@ void setup() {
   wm.addParameter(&dhtFieldHumidityParameter);  
   #endif
 
+  #ifdef USE_BMP280_SENSOR
+  WiFiManagerParameter bmp280Header("<h3>BMP280 sensor field names</h3>");
+  wm.addParameter(&bmp280Header);
+  #ifndef BMP280_NO_TEMPERATURE
+  WiFiManagerParameter bmp280FieldTemperatureParameter("bmp280_field_temperature", "Temperature", bmp280FieldTemperature, sizeof(bmp280FieldTemperature));
+  wm.addParameter(&bmp280FieldTemperatureParameter);
+  #endif
+  WiFiManagerParameter bmp280FieldPressureParameter("bmp280_field_pressure", "Pressure", bmp280FieldPressure, sizeof(bmp280FieldPressure));
+  wm.addParameter(&bmp280FieldPressureParameter);  
+  #endif
+
   // Set setup pin
   #ifdef USE_SETUP_PIN
   pinMode(SETUP_PIN, INPUT_PULLUP);
@@ -113,6 +124,12 @@ void setup() {
     strncpy(dhtFieldTemperature, dhtFieldTemperatureParameter.getValue(), sizeof(dhtFieldTemperature));
     strncpy(dhtFieldHumidity, dhtFieldHumidityParameter.getValue(), sizeof(dhtFieldHumidity));    
     #endif   
+    #ifdef USE_BMP280_SENSOR
+    #ifndef BMP280_NO_TEMPERATURE
+    strncpy(bmp280FieldTemperature, bmp280FieldTemperatureParameter.getValue(), sizeof(bmp280FieldTemperature));
+    #endif
+    strncpy(bmp280FieldPressure, bmp280FieldPressureParameter.getValue(), sizeof(bmp280FieldPressure));
+    #endif
     saveConfigFile();
     shouldSaveConfig = false;
     // Restart after configuration changes
@@ -135,6 +152,13 @@ void setup() {
   #ifdef USE_DHT_SENSOR
   // Initialize DHT sensor device
   dht.begin();
+  #endif
+
+  #ifdef USE_BMP280_SENSOR
+  if (!bmp280.begin(BMP280_I2C_ADDRESS)) { 
+    DPRINTLN_F("Could not find a valid BMP280 sensor, check wiring!");
+    fail(FAIL_I2C);
+  }
   #endif
 
   #ifdef USE_LED
@@ -165,36 +189,64 @@ void loop() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
+  float dhtT = dht.readTemperature();
   // Read humidity
-  float h = dht.readHumidity();
-
-  // Add sensor data (only not NaN)
-  if (!isnan(t))
-    pointDevice.addField(dhtFieldTemperature, t);
-  if (!isnan(h))
-    pointDevice.addField(dhtFieldHumidity, h);
+  float dhtH = dht.readHumidity();
 
   // Check if any reads failed and exit early (to try again).
-  if (isnan(t) || isnan(h)) {
+  if (isnan(dhtT) || isnan(dhtH)) {
     DPRINTFLN("Failed to read from DHT%i sensor on pin %i", DHT_TYPE, DHT_PIN);
     BLINK(ERROR_READ);
   }
   else {
     DPRINTLN_F("OK");
+    // Add sensor data (only not NaN)
+    if (!isnan(dhtT))
+      pointDevice.addField(dhtFieldTemperature, dhtT);
+    if (!isnan(dhtH))
+      pointDevice.addField(dhtFieldHumidity, dhtH);
     // There are some data to write to
     saveToInflux = true; 
     #ifndef DHT_NO_HEATINDEX
     // Compute heat index in Celsius (isFahreheit = false)
-    float hic = dht.computeHeatIndex(t, h, false);
+    float hic = dht.computeHeatIndex(dhtT, dhtH, false);
     pointDevice.addField(DHT_FIELD_HEATINDEX, hic);
     #endif
     #ifndef DHT_NO_DEWPOINT
     // Compute dew point 
-    float dp =  243.04 * (log(h / 100.0) + ((17.625 * t) / (243.04 + t))) / (17.625 - log(h / 100.0) - ((17.625 * t) / (243.04 + t)));
+    float dp =  243.04 * (log(dhtH / 100.0) + ((17.625 * dhtT) / (243.04 + dhtT))) / (17.625 - log(dhtH / 100.0) - ((17.625 * dhtT) / (243.04 + dhtT)));
     pointDevice.addField(DHT_FIELD_DEWPOINT, dp);
     #endif
   }  
+  #endif
+
+  #ifdef USE_BMP280_SENSOR 
+  DPRINT_F("Reading BMP280 sensor ... ");
+  // Read pressure
+  float bmp280P = bmp280.readPressure();
+  #ifndef BMP280_NO_TEMPERATURE
+  // Read temperature
+  float bmp280T = bmp280.readTemperature();
+  // Check if any reads failed and exit early (to try again).
+  if (isnan(bmp280P) || isnan(bmp280T)) {
+  #else
+  if (isnan(bmp280P)) {
+  #endif
+    DPRINTLN_F("Failed to read from BMP280 sensor");
+    BLINK(ERROR_READ);
+  }
+  else {
+    DPRINTLN_F("OK");
+    // Add sensor data (only not NaN)
+    if (!isnan(bmp280P))
+      pointDevice.addField(bmp280FieldPressure, bmp280P);
+    #ifndef BMP280_NO_TEMPERATURE
+    if (!isnan(bmp280T))
+      pointDevice.addField(bmp280FieldTemperature, bmp280T);
+    #endif
+    // There are some data to write to
+    saveToInflux = true; 
+  }
   #endif
 
   // Write data
@@ -274,6 +326,12 @@ void saveConfigFile() {
   json[JSON_DHT_TEMPERATURE] = dhtFieldTemperature;
   json[JSON_DHT_HUMIDITY] = dhtFieldHumidity;
   #endif
+  #ifdef USE_BMP280_SENSOR
+  #ifndef BMP280_NO_TEMPERATURE
+  json[JSON_BMP280_TEMPERATURE] = bmp280FieldTemperature;
+  #endif
+  json[JSON_BMP280_PRESSURE] = bmp280FieldPressure;
+  #endif
   // Open/create JSON file
   DPRINT_F("Opening " JSON_CONFIG_FILE "...");
   File configFile = LittleFS.open(JSON_CONFIG_FILE, "w");
@@ -335,6 +393,12 @@ bool loadConfigFile() {
   #ifdef USE_DHT_SENSOR
   strncpy(dhtFieldTemperature, json[JSON_DHT_TEMPERATURE] | DHT_FIELD_TEMPERATURE, sizeof(dhtFieldTemperature));
   strncpy(dhtFieldHumidity, json[JSON_DHT_HUMIDITY] | DHT_FIELD_HUMIDITY, sizeof(dhtFieldHumidity));
+  #endif
+  #ifdef USE_BMP280_SENSOR
+  #ifndef BMP280_NO_TEMPERATURE
+  strncpy(bmp280FieldTemperature, json[JSON_BMP280_TEMPERATURE] | BMP280_FIELD_TEMPERATURE, sizeof(bmp280FieldTemperature));
+  #endif
+  strncpy(bmp280FieldPressure, json[JSON_BMP280_PRESSURE] | BMP280_FIELD_PRESSURE, sizeof(bmp280FieldPressure));
   #endif
   //strcpy(ntpServer1, json[JSON_NTP_SERVER_1]);
   //strcpy(ntpServer2, json[JSON_NTP_SERVER_2]);

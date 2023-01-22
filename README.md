@@ -12,8 +12,9 @@ Firmware supports [on-premise InfluxDB](https://www.influxdata.com/get-influxdb/
 * Compile time features selection (see config.h)
   * [x] Use file secrets.h for secret default values (configuration of InfluxDB connection parameters)
   * [x] Use built-in LED for blinking every measure and for other statuses such as configuration fail
-  * [x] Use DHT sensor. Tested on [DHT11 sensor](https://www.laskakit.cz/arduino-senzor-teploty-a-vlhkosti-vzduchu-dht11--modul/) for temperature and humidity measurement.
   * [x] Use "configuration" button for start AP mode and configuration portal. Useful for "testing" and "roaming" solution.
+  * [x] Use DHT sensor. Tested on [DHT11 sensor](https://www.laskakit.cz/arduino-senzor-teploty-a-vlhkosti-vzduchu-dht11--modul/) for temperature and humidity measurement.
+  * [x] Use [BMP280](https://www.laskakit.cz/arduino-senzor-barometrickeho-tlaku-a-teploty-bmp280/) temperature and air pressure sensor.
   * [ ] Planned DS18B20 sensor.
   * [ ] Planned [BME280 sensor](https://www.laskakit.cz/arduino-senzor-tlaku--teploty-a-vlhkosti-bme280/).
 

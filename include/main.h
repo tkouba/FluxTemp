@@ -23,6 +23,10 @@
 #include <DHT.h>
 #include <DHT_U.h>
 #endif
+#ifdef USE_BMP280_SENSOR
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
+#endif
 
 #ifdef USE_SECRETS
 #include "secrets.h"
@@ -53,6 +57,7 @@ void blink(int count);
 #define ERROR_READ 2                        // Error reading sensor
 #define ERROR_WRITE 3                       // Error write data to InfluxDB
 #define FAIL_FS 5                           // LittleFS fail
+#define FAIL_I2C 7                          // Fail I2C initialisation
 
 // ***** SETUP_PIN section
 #ifdef USE_SETUP_PIN
@@ -88,6 +93,26 @@ char dhtFieldTemperature[15] = DHT_FIELD_TEMPERATURE;
 char dhtFieldHumidity[15] = DHT_FIELD_HUMIDITY;
 #define JSON_DHT_TEMPERATURE "dhtTemperature"
 #define JSON_DHT_HUMIDITY "dhtHumidity"
+#endif
+
+// ***** BMP280 sensor section
+#ifdef USE_BMP280_SENSOR
+#ifndef BMP280_I2C_ADDRESS
+#define BMP280_I2C_ADDRESS BMP280_ADDRESS_ALT   // BMP280 I2C ADDRESS
+#endif
+#ifndef BMP280_FIELD_TEMPERATURE
+#define BMP280_FIELD_TEMPERATURE "temperature"  // BMP280 temperature field value
+#endif
+#ifndef BMP280_FIELD_PRESSURE
+#define BMP280_FIELD_PRESSURE "pressure"        // BMP280 pressure field value
+#endif
+Adafruit_BMP280 bmp280;                     // I2C connection for sensor
+#ifndef BMP280_NO_TEMPERATURE
+char bmp280FieldTemperature[15] = BMP280_FIELD_TEMPERATURE;
+#define JSON_BMP280_TEMPERATURE "bmp280Temperature"
+#endif
+char bmp280FieldPressure[15] = BMP280_FIELD_PRESSURE;
+#define JSON_BMP280_PRESSURE "bmp280Pressure"
 #endif
 
 // ***** Configuration file section
