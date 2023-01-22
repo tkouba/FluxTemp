@@ -35,8 +35,8 @@ void setup() {
   bool configLoaded = loadConfigFile();
   // Configure WiFiManager options
   wm.setDebugOutput(WIFIMANAGER_DEBUG);
-  //wm.setSaveConfigCallback(saveConfigCallback);
-  //wm.setAPCallback(configModeCallback);  
+  wm.setSaveConfigCallback(saveConfigCallback);
+  wm.setAPCallback(configModeCallback);  
 
   WiFiManagerParameter influxHeader("<h3>InfluxDB parameters</h3>");
   WiFiManagerParameter influxUrlParameter("influx_url", "InfluxDB URL", influxUrl, sizeof(influxUrl));  
