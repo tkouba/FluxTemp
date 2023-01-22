@@ -43,6 +43,10 @@ caseX = 40;
 caseY = 2*usbY+miniY+dhtSpace+dhtY1+4*wt+caseR+2*holeR;
 caseZ = usbZ/2+miniZ1+4*wt+st;
 
+// switch
+swX = caseX/2-usbX/2-3*wt;
+swY = 10.0;
+
 // Better rounds
 $fn = $preview ? $fn : 64; 
 
@@ -114,6 +118,7 @@ module front() {
             projection() complete();
       }    
     }
+    // Back plate space
     hull() {
       translate([-caseX/2+wt,usbY/2+wt,caseZ-wt-st])
         cube(wt+2*st);
@@ -124,6 +129,7 @@ module front() {
       translate([caseX/2-2*wt-2*st,caseY-4*wt-caseR-2*holeR-2*st,caseZ-wt-st])
         cube(wt+2*st);
     }
+    // Screw holes
     translate([-caseX/2+wt+screwHD1,usbY/2+wt+screwHD1,3*wt])
       cylinder(d=screwDia,h=caseZ);
     translate([caseX/2-wt-screwHD1,usbY/2+wt+screwHD1,3*wt])
@@ -132,10 +138,14 @@ module front() {
       cylinder(d=screwDia,h=caseZ);
     translate([caseX/2-wt-screwHD1,caseY-4*wt-caseR-2*holeR-screwHD1,3*wt])
       cylinder(d=screwDia,h=caseZ);
+    // Top montage hole
     translate([0,caseY-2*wt-caseR-holeR,caseZ-0.7*holeR])
       sphere(r=holeR);
     translate([0,caseY-2*wt-caseR-holeR,3*wt])
       cylinder(r=holeR,h=caseZ-0.7*holeR-3*wt);
+    // Space for configuration switch
+    translate([-usbX/2-swX-wt,2*usbY-swY,2*wt])
+      cube([swX,swY+wt,caseZ]);
   }
 }
 
