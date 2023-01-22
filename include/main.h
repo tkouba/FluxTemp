@@ -2,14 +2,8 @@
 // Multiple include detection
 #define MAIN_H_
 
-/***** Compilation time features selection *****/
-// Comment or uncomment these directives for compilation time configuration 
-#define DEBUG                               // Comment to supress debug messages to serial 
-#define USE_SECRETS                         // Use Secrets.h as predefined values for WiFi Manager
-#define USE_LED                             // Use LED to indicate state
-#define USE_SETUP_PIN                       // Use SETUP_PIN for start configuration
-#define USE_DHT_SENSOR                      // Use DHT sensor for measurement
-/***** End of compilation time feature selection *****/
+// Include compile time configuration
+#include "config.h"
 
 // Basic include
 #include <Arduino.h>
@@ -42,7 +36,9 @@
 
 // ***** LED section
 #ifdef USE_LED
+#ifndef LED_PIN
 #define LED_PIN LED_BUILTIN                 // Pin where LED is connected
+#endif
 #define LED_INTERVAL 150                    // LED blink interval
 #define LED_ON LOW                          // Turns the LED *on*, D1 Mini: LOW, Arduino: HIGH
 #define LED_OFF HIGH                        // Turns the LED *off*, D1 Mini: HIGH, Arduino: LOW
@@ -60,21 +56,43 @@ void blink(int count);
 
 // ***** SETUP_PIN section
 #ifdef USE_SETUP_PIN
+#ifndef SETUP_PIN
 #define SETUP_PIN D7                        // Pin for reset and new setup - start captive portal with saved values
+#endif
 // Interrupt routine for restart
 void IRAM_ATTR interruptRestart();
 #endif
 
 // ***** DHT sensor section
 #ifdef USE_DHT_SENSOR
+#ifndef DHT_PIN
 #define DHT_PIN D1                          // Digital pin connected to the DHT sensor
+#endif
+#ifndef DHT_TYPE
 #define DHT_TYPE DHT11                      // DHT 11 | DHT 22 (AM2302) | DHT 21 (AM2301)
-DHT dht(DHT_PIN, DHT_TYPE);                 // Initialize DHT sensor.
+#endif
+#ifndef DHT_FIELD_TEMPERATURE
+#define DHT_FIELD_TEMPERATURE "temperature" // DHT temperature field value
+#endif
+#ifndef DHT_FIELD_HUMIDITY
+#define DHT_FIELD_HUMIDITY "humidity"       // DHT humidity field value
+#endif
+#ifndef DHT_FIELD_HEATINDEX
+#define DHT_FIELD_HEATINDEX "heatIndex"     // DHT heat index field value
+#endif
+#ifndef DHT_FIELD_DEWPOINT
+#define DHT_FIELD_DEWPOINT "dewPoint"       // DHT dew point field value
+#endif
+DHT dht(DHT_PIN, DHT_TYPE);                 // Initialize DHT sensor
+char dhtFieldTemperature[15] = DHT_FIELD_TEMPERATURE;
+char dhtFieldHumidity[15] = DHT_FIELD_HUMIDITY;
+#define JSON_DHT_TEMPERATURE "dhtTemperature"
+#define JSON_DHT_HUMIDITY "dhtHumidity"
 #endif
 
 // ***** Configuration file section
+#define JSON_SIZE 2048
 #define JSON_CONFIG_FILE "/config-v1.json"  // Configuration file name and version
-#define JSON_PIN "configPin"                // Configuration PIN
 #define JSON_INFLUXDB_URL "influxUrl"       // InfluxDB URL
 //#define JSON_INFLUXDB_CERT "influxCert"     // InfluxDB server certificate
 #define JSON_INFLUXDB_ORG "influxOrg"       // InfluxDB ORG
@@ -97,30 +115,37 @@ DHT dht(DHT_PIN, DHT_TYPE);                 // Initialize DHT sensor.
 WiFiManager wm;
 InfluxDBClient client;
 
-// Define configuration variables
+// InfluxDB configuration default values, set this values in secrets.h for
 #ifndef INFLUXDB_URL
-#define INFLUXDB_URL "https://westeurope-1.azure.cloud2.influxdata.com" // Default value for InfluxDB Cloud
+#define INFLUXDB_URL "https://westeurope-1.azure.cloud2.influxdata.com" // Default value for InfluxDB Cloud, use secrets.h for own default value
 #endif
 #ifndef INFLUXDB_BUCKET
-#define INFLUXDB_BUCKET "data"              // Default bucket name
+#define INFLUXDB_BUCKET "data"              // Default bucket name, use secrets.h for own default value
 #endif
 #ifndef INFLUXDB_TOKEN
 #define INFLUXDB_TOKEN ""                   // Do not set here, use secrets.h instead
 #endif
 #ifndef INFLUXDB_ORG
 #define INFLUXDB_ORG ""                     // Do not set here, use secrets.h instead
-#endif 
+#endif
+#ifndef INFLUXDB_MEASUREMENT
+#define INFLUXDB_MEASUREMENT "temperature"  // InfluxDB 
+#endif
+#ifndef INFLUXDB_LOCATION
+#define INFLUXDB_LOCATION "Living room"
+#endif
+
+// Define InfluxDB configuration variables
 char influxUrl[100] = INFLUXDB_URL;         // InfluxDB URL address
 //char influxCert[100];
 char influxOrg[50] = INFLUXDB_ORG;          // InfluxDB organization id 
 char influxBucket[50] = INFLUXDB_BUCKET;    // InfluxDB bucket name
 char influxToken[100] = INFLUXDB_TOKEN;     // InfluxDB 
+char measurementName[20] = INFLUXDB_MEASUREMENT; // InfluxDB measuremen name
+char location[20] = INFLUXDB_LOCATION;      // InfluxDB TAG location
 //char ntpServer1[100] = "pool.ntp.org";
 //char ntpServer1[100] = "time.nis.gov";
 //char ntpZone[100] = TZ_Europe_Prague; // Central Europe timezone (TZ.h), see https://ftp.fau.de/aminet/util/time/tzinfo.txt
-char measurementName[50] = "temperature";
-char location[50] = "Living room";
-char configPin[20];
 
 // Define internal variables
 char deviceId[25];                          // Device identifier (config WiFi name), DEVICE_NAME and chip ID

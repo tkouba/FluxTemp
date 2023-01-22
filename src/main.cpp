@@ -33,32 +33,35 @@ void setup() {
 
   // Read configuration from LittleFS
   bool configLoaded = loadConfigFile();
-
-  if (!configLoaded) {
-    // Generate random config PIN
-    itoa(random(1000000, 99999999), configPin, DEC);    
-  }
-
   // Configure WiFiManager options
   wm.setDebugOutput(WIFIMANAGER_DEBUG);
-  wm.setSaveConfigCallback(saveConfigCallback);
-  wm.setAPCallback(configModeCallback);  
+  //wm.setSaveConfigCallback(saveConfigCallback);
+  //wm.setAPCallback(configModeCallback);  
 
+  WiFiManagerParameter influxHeader("<h3>InfluxDB parameters</h3>");
   WiFiManagerParameter influxUrlParameter("influx_url", "InfluxDB URL", influxUrl, sizeof(influxUrl));  
   WiFiManagerParameter influxOrgParameter("influx_org", "InfluxDB ORG", influxOrg, sizeof(influxOrg));
   WiFiManagerParameter influxBucketParameter("influx_bucket", "InfluxDB Bucket", influxBucket, sizeof(influxBucket));
   WiFiManagerParameter influxTokenParameter("influx_token", "InfluxDB Token", influxToken, sizeof(influxToken));
   WiFiManagerParameter measurementNameParameter("measurement_name", "Measurement Name", measurementName, sizeof(measurementName));
   WiFiManagerParameter locationParameter("location", "Device location", location, sizeof(location));
-  WiFiManagerParameter configPinParameter("config_pin", "Configuration PIN", configPin, sizeof(configPin));
 
+  wm.addParameter(&influxHeader);
   wm.addParameter(&influxUrlParameter);
   wm.addParameter(&influxOrgParameter);
   wm.addParameter(&influxBucketParameter);
   wm.addParameter(&influxTokenParameter);
   wm.addParameter(&measurementNameParameter);
   wm.addParameter(&locationParameter);
-  wm.addParameter(&configPinParameter);
+
+  #ifdef USE_DHT_SENSOR
+  WiFiManagerParameter dhtHeader("<h3>DHT sensor field names</h3>");
+  WiFiManagerParameter dhtFieldTemperatureParameter("dht_field_temperature", "Temperature", dhtFieldTemperature, sizeof(dhtFieldTemperature));
+  WiFiManagerParameter dhtFieldHumidityParameter("dht_field_humidity", "Humidity", dhtFieldHumidity, sizeof(dhtFieldHumidity));
+  wm.addParameter(&dhtHeader);
+  wm.addParameter(&dhtFieldTemperatureParameter);
+  wm.addParameter(&dhtFieldHumidityParameter);  
+  #endif
 
   // Set setup pin
   #ifdef USE_SETUP_PIN
@@ -97,8 +100,6 @@ void setup() {
   DPRINT(WiFi.SSID());
   DPRINT_F(", IP ");
   DPRINTLN(WiFi.localIP());
-  DPRINT_F("Configuration PIN: ");
-  DPRINTLN(configPin);
 
   // Save configuration if needed
   if (shouldSaveConfig) {
@@ -107,8 +108,11 @@ void setup() {
     strncpy(influxBucket, influxBucketParameter.getValue(), sizeof(influxBucket));
     strncpy(influxToken, influxTokenParameter.getValue(), sizeof(influxToken));
     strncpy(measurementName, measurementNameParameter.getValue(), sizeof(measurementName));
-    strncpy(location, locationParameter.getValue(), sizeof(location));    
-    strncpy(configPin, configPinParameter.getValue(), sizeof(configPin));
+    strncpy(location, locationParameter.getValue(), sizeof(location));
+    #ifdef USE_DHT_SENSOR    
+    strncpy(dhtFieldTemperature, dhtFieldTemperatureParameter.getValue(), sizeof(dhtFieldTemperature));
+    strncpy(dhtFieldHumidity, dhtFieldHumidityParameter.getValue(), sizeof(dhtFieldHumidity));    
+    #endif   
     saveConfigFile();
     shouldSaveConfig = false;
     // Restart after configuration changes
@@ -140,7 +144,7 @@ void setup() {
 }
 
 void loop() {
-  BLINK(1); // Blink at every measure
+  BLINK(1); // Blink at every measure  
 
   bool saveToInflux = false; // Are there any data to save?
 
@@ -160,30 +164,36 @@ void loop() {
   // Read data from sensor
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
+  // Read humidity
+  float h = dht.readHumidity();
 
   // Add sensor data (only not NaN)
-  if (!isnan(h))
-    pointDevice.addField("humidity", h);
   if (!isnan(t))
-    pointDevice.addField("temperature", t);
+    pointDevice.addField(dhtFieldTemperature, t);
+  if (!isnan(h))
+    pointDevice.addField(dhtFieldHumidity, h);
 
   // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t)) {
+  if (isnan(t) || isnan(h)) {
     DPRINTFLN("Failed to read from DHT%i sensor on pin %i", DHT_TYPE, DHT_PIN);
     BLINK(ERROR_READ);
   }
   else {
     DPRINTLN_F("OK");
-    saveToInflux = true; // There are some data to write to
+    // There are some data to write to
+    saveToInflux = true; 
+    #ifndef DHT_NO_HEATINDEX
     // Compute heat index in Celsius (isFahreheit = false)
     float hic = dht.computeHeatIndex(t, h, false);
-    pointDevice.addField("heatIndex", hic);
+    pointDevice.addField(DHT_FIELD_HEATINDEX, hic);
+    #endif
+    #ifndef DHT_NO_DEWPOINT
     // Compute dew point 
     float dp =  243.04 * (log(h / 100.0) + ((17.625 * t) / (243.04 + t))) / (17.625 - log(h / 100.0) - ((17.625 * t) / (243.04 + t)));
-    pointDevice.addField("dewPoint", dp);
+    pointDevice.addField(DHT_FIELD_DEWPOINT, dp);
+    #endif
   }  
   #endif
 
@@ -247,8 +257,9 @@ void IRAM_ATTR interruptRestart()
 /**** Configuration file operations *****/
 
 void saveConfigFile() {
+  DPRINTLN_F("Saving configuration");
   // Create a JSON document
-  StaticJsonDocument<1024> json;
+  StaticJsonDocument<JSON_SIZE> json;
   json[JSON_INFLUXDB_URL] = influxUrl;
   //json[JSON_INFLUXDB_CERT] = influxCert;
   json[JSON_INFLUXDB_ORG] = influxOrg;
@@ -259,8 +270,10 @@ void saveConfigFile() {
   //json[JSON_NTP_SERVER_2] = ntpServer2;
   //json[JSON_NTP_TZ] = ntpZone;  
   json[JSON_TAG_LOCATION] = location;  
-  json["configPin"] = configPin;
-
+  #ifdef USE_DHT_SENSOR
+  json[JSON_DHT_TEMPERATURE] = dhtFieldTemperature;
+  json[JSON_DHT_HUMIDITY] = dhtFieldHumidity;
+  #endif
   // Open/create JSON file
   DPRINT_F("Opening " JSON_CONFIG_FILE "...");
   File configFile = LittleFS.open(JSON_CONFIG_FILE, "w");
@@ -306,45 +319,28 @@ bool loadConfigFile() {
 
   // Parse JSON
   DPRINT_F("Parsing JSON file...");
-  StaticJsonDocument<2048> json;
+  StaticJsonDocument<JSON_SIZE> json;
   DeserializationError error = deserializeJson(json, configFile);
   if (error) {
     DPRINTLN_F("Failed!");
     return false;
   }
   strncpy(influxUrl, json[JSON_INFLUXDB_URL], sizeof(influxUrl));
-  //strcpy(influxCert, json[JSON_INFLUXDB_CERT]);
+  //strncpy(influxCert, json[JSON_INFLUXDB_CERT]);
   strncpy(influxOrg, json[JSON_INFLUXDB_ORG], sizeof(influxOrg));
   strncpy(influxBucket, json[JSON_INFLUXDB_BUCKET], sizeof(influxBucket));
   strncpy(influxToken, json[JSON_INFLUXDB_TOKEN], sizeof(influxToken));
-  strncpy(measurementName, json[JSON_INFLUXDB_MEAS], sizeof(measurementName));
+  strncpy(measurementName, json[JSON_INFLUXDB_MEAS] | INFLUXDB_MEASUREMENT, sizeof(measurementName));
+  strncpy(location, json[JSON_TAG_LOCATION] | INFLUXDB_LOCATION, sizeof(location));
+  #ifdef USE_DHT_SENSOR
+  strncpy(dhtFieldTemperature, json[JSON_DHT_TEMPERATURE] | DHT_FIELD_TEMPERATURE, sizeof(dhtFieldTemperature));
+  strncpy(dhtFieldHumidity, json[JSON_DHT_HUMIDITY] | DHT_FIELD_HUMIDITY, sizeof(dhtFieldHumidity));
+  #endif
   //strcpy(ntpServer1, json[JSON_NTP_SERVER_1]);
   //strcpy(ntpServer2, json[JSON_NTP_SERVER_2]);
   //strcpy(ntpZone, json[JSON_NTP_TZ]);
-  strncpy(location, json[JSON_TAG_LOCATION], sizeof(location));
-  strncpy(configPin, json[JSON_PIN], sizeof(configPin));
   DPRINTLN_F("OK");
   return true;
-}
-
-void deleteConfigFile() {
-  DPRINT_F("Opening LittleFS...");
-  if (!LittleFS.begin()) {
-    DPRINTLN_F("Failed!");
-    fail(FAIL_FS);
-  }
-  DPRINTLN_F("OK");
-  if (LittleFS.exists(JSON_CONFIG_FILE)) {
-    DPRINT_F("Deleting " JSON_CONFIG_FILE "...");
-    if (!LittleFS.remove(JSON_CONFIG_FILE)) {
-      DPRINTLN_F("Failed!");
-      fail(FAIL_FS);
-    }
-    DPRINTLN_F("OK");
-  }
-  else {
-    DPRINTLN_F("Configuration file " JSON_CONFIG_FILE " does not exist");
-  }
 }
 
 // **** WiFiManager callbacks 
@@ -354,9 +350,9 @@ void saveConfigCallback() {
 }
 
 void configModeCallback(WiFiManager* myWiFiManager) {
-  DPRINTLN("Configuration mode:");
-  DPRINT("  SSID: ");
+  DPRINTLN_F("Configuration mode:");
+  DPRINT_F("  SSID: ");
   DPRINTLN(myWiFiManager->getConfigPortalSSID());
-  DPRINT("  IP Address: ");
+  DPRINT_F("  IP Address: ");
   DPRINTLN(WiFi.softAPIP());
 } 
