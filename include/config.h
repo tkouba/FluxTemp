@@ -17,7 +17,7 @@
 #define SETUP_PIN D7                        // Pin for reset and new setup - start captive portal with saved values
 
 // ***** DHT sensor section
-#define DHT_PIN D1                          // Digital pin connected to the DHT sensor
+#define DHT_PIN D6                          // Digital pin connected to the DHT sensor
 #define DHT_TYPE DHT11                      // DHT 11 | DHT 22 (AM2302) | DHT 21 (AM2301)
 //#define DHT_NO_HEATINDEX                    // Suppress sendig heat index
 //#define DHT_NO_DEWPOINT                     // Suppress sending dew point

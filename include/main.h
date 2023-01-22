@@ -66,7 +66,7 @@ void IRAM_ATTR interruptRestart();
 // ***** DHT sensor section
 #ifdef USE_DHT_SENSOR
 #ifndef DHT_PIN
-#define DHT_PIN D1                          // Digital pin connected to the DHT sensor
+#define DHT_PIN D6                          // Digital pin connected to the DHT sensor
 #endif
 #ifndef DHT_TYPE
 #define DHT_TYPE DHT11                      // DHT 11 | DHT 22 (AM2302) | DHT 21 (AM2301)
