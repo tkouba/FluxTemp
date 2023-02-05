@@ -12,7 +12,7 @@
 // Set defines for detailed configuration (or nothing and use defaults)
 
 // ***** Global configuration
-#define LOOP_INTERVAL 10*1000             // Loop delay interval
+//#define LOOP_INTERVAL 5*10*1000             // Loop delay interval
 
 // ***** LED section
 #define LED_PIN LED_BUILTIN                 // Pin where LED is connected

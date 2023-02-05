@@ -41,6 +41,7 @@
 #ifndef LOOP_INTERVAL
 #define LOOP_INTERVAL 5*60*1000             // Loop delay interval (default value is 5 min)
 #endif
+#define CONFIG_PORTAL_TIMEOUT 180           // Configuration portal timeout (default value is 3 min)
 
 // ***** LED section
 #ifdef USE_LED

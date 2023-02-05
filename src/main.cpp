@@ -80,6 +80,7 @@ void setup() {
   bool setupPressed = digitalRead(SETUP_PIN) == LOW;
   if (setupPressed) {
     DPRINTLN_F("Request to start configuration portal...");
+    // Starting configuration portal without timeout (manual request for configuration)
     if (!wm.startConfigPortal(deviceId)) {
       DPRINTLN_F("Config portal failed, rebooting.");
       ESP.restart();
@@ -91,12 +92,15 @@ void setup() {
   #endif  
     if (!configLoaded) {
       DPRINTLN_F("Config load failed or config request, starting configuration portal...");
+      // Starting configuration portal without timeout (config not loaded, so we have to config)
       if (!wm.startConfigPortal(deviceId)) {
         DPRINTLN_F("Config portal failed, rebooting.");
         ESP.restart();
       }
     } else {
       DPRINTLN_F("Config load successful, connecting to WiFi...");
+      // Set configuration portal timeout
+      wm.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT);
       if (!wm.autoConnect(deviceId)) {
         DPRINTLN_F("Config portal failed, rebooting.");      
         ESP.restart();
@@ -168,6 +172,11 @@ void setup() {
 }
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    
+  }
+
   BLINK(1); // Blink at every measure  
 
   bool saveToInflux = false; // Are there any data to save?
