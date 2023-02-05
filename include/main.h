@@ -2,6 +2,10 @@
 // Multiple include detection
 #define MAIN_H_
 
+// Version and device name first
+#define VERSION "0.1.1"                     // Version string
+#define DEVICE_NAME "ESP-FLUX-TEMP"         // Device name
+
 // Include compile time configuration
 #include "config.h"
 
@@ -34,9 +38,9 @@
 
 #include "debug.h"
 
-#define VERSION "0.1.0"                     // Version string
-#define DEVICE_NAME "ESP-FLUX-TEMP"         // Device name
-#define LOOP_INTERVAL 5*60*1000             // Loop delay interval
+#ifndef LOOP_INTERVAL
+#define LOOP_INTERVAL 5*60*1000             // Loop delay interval (default value is 5 min)
+#endif
 
 // ***** LED section
 #ifdef USE_LED
