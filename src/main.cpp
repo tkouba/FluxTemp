@@ -74,6 +74,13 @@ void setup() {
   wm.addParameter(&bmp280FieldPressureParameter);  
   #endif
 
+  #ifdef USE_DS18B20_SENSOR
+  WiFiManagerParameter ds18b20Header("<h3>DS18B20 sensor field names</h3>");
+  WiFiManagerParameter ds18b20FieldTemperatureParameter("ds18b20_field_temperature", "Temperature", ds18b20FieldTemperature, sizeof(ds18b20FieldTemperature));
+  wm.addParameter(&ds18b20Header);
+  wm.addParameter(&ds18b20FieldTemperatureParameter);
+  #endif
+
   // Set setup pin
   #ifdef USE_SETUP_PIN
   pinMode(SETUP_PIN, INPUT_PULLUP);
@@ -134,6 +141,9 @@ void setup() {
     #endif
     strncpy(bmp280FieldPressure, bmp280FieldPressureParameter.getValue(), sizeof(bmp280FieldPressure));
     #endif
+    #ifdef USE_DS18B20_SENSOR
+    strncpy(ds18b20FieldTemperature, ds18b20FieldTemperatureParameter.getValue(), sizeof(ds18b20FieldTemperature));
+    #endif
     saveConfigFile();
     shouldSaveConfig = false;
     // Restart after configuration changes
@@ -165,6 +175,17 @@ void setup() {
   }
   #endif
 
+  #ifdef USE_DS18B20_SENSOR
+  //Initialize Dallas OneWire sensor device
+  dallas.begin();
+  dsCount = dallas.getDeviceCount();
+  if (dsCount == 0) {
+    DPRINTLN_F("Could not find any DS18B20 sensor, check wiring!");
+    fail(FAIL_DALLAS);
+  }
+  DPRINTFLN("Find %i DS18B20 devices", dsCount);
+  #endif
+
   #ifdef USE_LED
   // End setup
   digitalWrite(LED_PIN, LED_OFF); 
@@ -193,12 +214,12 @@ void loop() {
   pointDevice.addField("uptime", millis64());
 
   #ifdef USE_DHT_SENSOR
-  DPRINT_F("Reading DHT sensor ... ");
+  DPRINTF("Reading DHT%i sensor ... ", DHT_TYPE);
   // Read data from sensor
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   // Read temperature as Celsius (the default)
-  float dhtT = dht.readTemperature();
+  float dhtT = dht.readTemperature(false, true);
   // Read humidity
   float dhtH = dht.readHumidity();
 
@@ -255,6 +276,31 @@ void loop() {
     #endif
     // There are some data to write to
     saveToInflux = true; 
+  }
+  #endif
+
+  #ifdef USE_DS18B20_SENSOR  
+  DPRINT_F("Reading DS18B20 sensor ... ");
+  // Send the command to get temperatures
+  if (dallas.requestTemperatures()) {
+    DPRINTLN_F("OK");
+    float dsTemp;
+    if (dsCount == 1) {
+      dsTemp = dallas.getTempCByIndex(0);
+      pointDevice.addField(ds18b20FieldTemperature, dsTemp);
+    }
+    else {
+      char fieldName[25];
+      for (uint8_t i = 0; i < dsCount; i++) {
+        dsTemp = dallas.getTempCByIndex(0);        
+        sprintf(fieldName, "%s_%i", ds18b20FieldTemperature, i);
+        pointDevice.addField(fieldName, dsTemp);
+      }
+    }
+  }
+  else {
+    DPRINTLN_F("Failed to request temperature from DS18B20 sensors");
+    BLINK(ERROR_READ);
   }
   #endif
 
@@ -341,6 +387,9 @@ void saveConfigFile() {
   #endif
   json[JSON_BMP280_PRESSURE] = bmp280FieldPressure;
   #endif
+  #ifdef USE_DS18B20_SENSOR
+  json[JSON_DS18B20_TEMPERATURE] = ds18b20FieldTemperature;
+  #endif
   // Open/create JSON file
   DPRINT_F("Opening " JSON_CONFIG_FILE "...");
   File configFile = LittleFS.open(JSON_CONFIG_FILE, "w");
@@ -408,6 +457,9 @@ bool loadConfigFile() {
   strncpy(bmp280FieldTemperature, json[JSON_BMP280_TEMPERATURE] | BMP280_FIELD_TEMPERATURE, sizeof(bmp280FieldTemperature));
   #endif
   strncpy(bmp280FieldPressure, json[JSON_BMP280_PRESSURE] | BMP280_FIELD_PRESSURE, sizeof(bmp280FieldPressure));
+  #endif
+  #ifdef USE_DS18B20_SENSOR
+  strncpy(ds18b20FieldTemperature, json[JSON_DS18B20_TEMPERATURE] | DS18B20_FIELD_TEMPERATURE, sizeof(ds18b20FieldTemperature));  
   #endif
   //strcpy(ntpServer1, json[JSON_NTP_SERVER_1]);
   //strcpy(ntpServer2, json[JSON_NTP_SERVER_2]);

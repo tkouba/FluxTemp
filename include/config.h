@@ -7,6 +7,7 @@
 #define USE_SETUP_PIN                       // Use SETUP_PIN for start configuration
 #define USE_DHT_SENSOR                      // Use DHT sensor for temperature/humidity measurement
 #define USE_BMP280_SENSOR                   // Use BMP280 sensor for temperature/presure measurement
+#define USE_DS18B20_SENSOR                  // Use DS18B20 sensor for temperature measurement
 // ***** End of compilation time feature selection
 
 // Set defines for detailed configuration (or nothing and use defaults)
@@ -31,6 +32,11 @@
 #define DHT_FIELD_HUMIDITY "humidity"       // DHT humidity field value
 #define DHT_FIELD_HEATINDEX "heatIndex"     // DHT heat index field value
 #define DHT_FIELD_DEWPOINT "dewPoint"       // DHT dew point field value
+
+// ***** DS18B20 sensor section
+#define DS18B20_PIN D5                      // Digital pin connected to the DS18B20 sensor
+// ***** DS18b20 sensor defaults (overridden by run-time settings)
+#define DS18B20_FIELD_TEMPERATURE "temperature" // DS18B20 temperature field value
 
 // ***** BMP280 sensor section
 #define BMP280_I2C_ADDRESS BMP280_ADDRESS_ALT   // BMP280 I2C ADDRESS
