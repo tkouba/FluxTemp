@@ -15,7 +15,7 @@ Firmware supports [on-premise InfluxDB](https://www.influxdata.com/get-influxdb/
   * [x] Use "configuration" button for start AP mode and configuration portal. Useful for "testing" and "roaming" solution.
   * [x] Use DHT sensor. Tested on [DHT11 sensor](https://www.laskakit.cz/arduino-senzor-teploty-a-vlhkosti-vzduchu-dht11--modul/) for temperature and humidity measurement.
   * [x] Use [BMP280](https://www.laskakit.cz/arduino-senzor-barometrickeho-tlaku-a-teploty-bmp280/) temperature and air pressure sensor.
-  * [x] Planned DS18B20 sensor.
+  * [x] Use [DS18B20](https://www.laskakit.cz/dallas-ds18b20--orig--digitalni-cidlo-teploty-to-92/) sensor.
   * [ ] Planned [BME280 sensor](https://www.laskakit.cz/arduino-senzor-tlaku--teploty-a-vlhkosti-bme280/).
 
 ## Limitations
@@ -41,6 +41,7 @@ The following external libraries are required:
 * [WiFiManager](https://github.com/tzapu/WiFiManager)
 * [ESP8266 Influxdb](https://github.com/tobiasschuerg/InfluxDB-Client-for-Arduino)
 * [DHT sensor library](https://github.com/adafruit/DHT-sensor-library)
+* [DallasTemperature](https://github.com/milesburton/Arduino-Temperature-Control-Library)
 
 ## Other resources
 
